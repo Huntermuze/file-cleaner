@@ -16,6 +16,7 @@ int main(int argc, char **argv) {
     } else {
         std::cout << "You may only use the following syntax: \"./t1 [dirty_file_name] [clean_file_name]\"."
                   << std::endl;
+        return EXIT_SUCCESS;
     }
 
     std::cout << "Cleaning file " << dirtyFilePath << "..." << std::endl;
