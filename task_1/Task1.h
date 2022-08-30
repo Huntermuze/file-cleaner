@@ -21,13 +21,17 @@ namespace WordFilter {
             }
         }
 
-        std::shuffle(words_list.begin(), words_list.end(), std::mt19937(std::random_device()()));
         DirtyFile.close();
-
         std::ofstream CleanFile(clean_path);
+        std::shuffle(words_list.begin(), words_list.end(), std::mt19937(std::random_device()()));
+        words_list.erase( unique( words_list.begin(), words_list.end() ), words_list.end() );
+
+        for (auto & i : words_list) {
+            CleanFile << i << "\n";
+        }
 
         CleanFile.close();
-    };
+    }
 }
 
 
