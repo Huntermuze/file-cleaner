@@ -1,4 +1,3 @@
-#include <iostream>
 #include <chrono>
 #include "Task1.h"
 
@@ -14,7 +13,7 @@ int main(int argc, char **argv) {
         clean_file_path = argv[2];
 
     } else {
-        std::cout << "You may only use the following syntax: \"./t1 [dirty_file_name] [clean_file_name]\"."
+        std::cerr << "You may only use the following syntax: \"./t1 [dirty_file_name] [clean_file_name]\"."
                   << std::endl;
         return EXIT_SUCCESS;
     }
