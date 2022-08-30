@@ -1,5 +1,7 @@
 #ifndef OPERATING_SYSTEM_PRINCIPLES_TASK1_H
 #define OPERATING_SYSTEM_PRINCIPLES_TASK1_H
+#define MAX_WORD_LENGTH 15
+#define MIN_WORD_LENGTH 3
 
 #include <fstream>
 #include <algorithm>
