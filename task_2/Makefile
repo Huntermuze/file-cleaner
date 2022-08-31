@@ -1,9 +1,9 @@
 
-t1: Task2.o
-	g++ Task2.o -o t2
+t2: task2.o
+	g++ task2.o function_timer.o word_filter.o -o t2
 
-Task1.o: Task2.cpp Task2.h
-	g++ -c -Wall -Werror -g Task2.cpp
+task2.o: task2.cpp ../task_1/word_filter.h ../task_1/word_filter.cpp ../utilities/function_timer.h
+	g++ -c -Wall -Werror -g task2.cpp ../utilities/function_timer.cpp ../task_1/word_filter.cpp
 
 clean:
 	rm *.o t2
