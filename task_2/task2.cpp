@@ -1,16 +1,17 @@
 #include <cstdio>
 #include <iostream>
+#include <fstream>
 #include <unistd.h>
 #include <cstdlib>
 #include <wait.h>
 #include <bits/stdc++.h>
 #include "../task_1/word_filter.h"
+#include "../utilities/function_timer.h"
 
 std::vector<std::vector<std::string>> getLengthSepLists() {
     std::string dirty_file_path = "../data/dirty.txt";
     std::string clean_file_path = "../data/clean_cpp.txt";
     std::vector<std::vector<std::string>> s;
-    std::string curr_line;
     auto clean_words = WordFilter::TaskFilter(&dirty_file_path, &clean_file_path);
 
     for (long unsigned int i = MIN_WORD_LENGTH; i <= MAX_WORD_LENGTH; ++i) {
@@ -28,10 +29,8 @@ std::vector<std::vector<std::string>> getLengthSepLists() {
     return s;
 }
 
-bool compareString(const std::string& s1, const std::string& s2){
-    auto l = s1.substr(MIN_WORD_LENGTH, s1.length());
-    auto r = s2.substr(MIN_WORD_LENGTH, s2.length());
-    return l < r;
+bool compareString(const std::string_view &s1, const std::string_view &s2) {
+    return s1.substr(MIN_WORD_LENGTH - 1) < s2.substr(MIN_WORD_LENGTH - 1);
 }
 
 void map2() {
@@ -44,6 +43,7 @@ void map2() {
     for (long unsigned int i = 0; i < lists.size() - 1; ++i) {
         // This causes copy. Use move semantics to avoid.
         pid = fork();
+        std::cout << "1=" << pid << std::endl;
         words = lists[i];
         if (pid == 0) {
             break;
@@ -56,7 +56,15 @@ void map2() {
     }
 
     std::sort(words.begin(), words.end(), compareString);
-    std::cout << words[0] << std::endl;
+//    std::cout << words[0].data() << std::endl;
+
+//    std::ofstream OutFile("separated_lists/length_" + std::to_string(words[0].length()));
+//    for (auto &word: words) {
+//        OutFile << *word.data() << "\n";
+//    }
+//
+//    OutFile.close();
+
     /*
      * 'wait' waits for a child process to terminate, and returns that child process's pid. On error (eg when there are no
      * child processes), -1 is returned. So, basically, the code keeps waiting for child processes to finish, until the
@@ -65,10 +73,18 @@ void map2() {
      * So, the childs with no children (leafs) will terminate immediately, since they don't have anything to wait for
      * and -1 will be returned as soon as this loop is checked.
      */
-    while (wait(nullptr) != -1 || errno != ECHILD);
+    while (wait(NULL) != -1 || errno != ECHILD) {
+//        std::cout << "hi" << std::endl;
+    };
+
+    std::cout << "2=" << pid << std::endl;
 }
 
 int main() {
+    // TODO stop this from printing 13 times. Find a way to suspend the child processes from continuing.
     map2();
+//    double time_taken = time_void_func(map2);
+//    std::cout << std::endl << "Time taken in seconds: " << time_taken << "s." << std::endl;
 }
+
 

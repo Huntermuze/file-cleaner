@@ -34,12 +34,22 @@ std::pair<double, T> time_func(T(*func)(M...), M...m) {
     return {duration_in_seconds(end - start), result};
 }
 
+
 template<typename T>
 std::pair<double, T> time_func(T(*func)()) {
     auto start = std::chrono::high_resolution_clock::now();
     T result = func();
     auto end = std::chrono::high_resolution_clock::now();
     return {duration_in_seconds(end - start), result};
+}
+
+// FIXME not a good solution. Find PROPER work-around.
+template<typename T>
+double time_void_func(T(*func)()) {
+    auto start = std::chrono::high_resolution_clock::now();
+    func();
+    auto end = std::chrono::high_resolution_clock::now();
+    return duration_in_seconds(end - start);
 }
 
 
