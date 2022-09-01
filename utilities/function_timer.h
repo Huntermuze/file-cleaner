@@ -43,14 +43,4 @@ std::pair<double, T> time_func(T(*func)()) {
     return {duration_in_seconds(end - start), result};
 }
 
-// FIXME not a good solution. Find PROPER work-around.
-template<typename T>
-double time_void_func(T(*func)()) {
-    auto start = std::chrono::high_resolution_clock::now();
-    func();
-    auto end = std::chrono::high_resolution_clock::now();
-    return duration_in_seconds(end - start);
-}
-
-
 #endif //OPERATING_SYSTEM_PRINCIPLES_TIMER_H
