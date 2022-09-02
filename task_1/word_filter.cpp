@@ -3,7 +3,33 @@
 #include <regex>
 #include "word_filter.h"
 
-std::vector<std::string> WordFilter::TaskFilter(std::string *dirty_path, std::string *clean_path) {
+std::vector<std::string> WordFilter::task_filter_dual(std::string *dirty_path, std::string *clean_path) {
+    auto words_list = task_filter(dirty_path);
+    std::ofstream CleanFile(*clean_path);
+    for (auto &i: words_list) {
+        CleanFile << i << "\n";
+    }
+
+    CleanFile.close();
+    return words_list;
+}
+
+int WordFilter::task_filter(std::string *dirty_path, std::string *clean_path) {
+    auto words_list = task_filter(dirty_path);
+    std::ofstream CleanFile(*clean_path);
+    
+    if (!CleanFile.good()) {
+        return EXIT_FAILURE;
+    }
+    for (auto &i: words_list) {
+        CleanFile << i << "\n";
+    }
+    CleanFile.close();
+
+    return EXIT_SUCCESS;
+}
+
+std::vector<std::string> WordFilter::task_filter(std::string *dirty_path) {
     // Just sort the data and shuffle it. Ignore third
     std::string curr_line;
     std::ifstream DirtyFile(*dirty_path);
@@ -17,14 +43,10 @@ std::vector<std::string> WordFilter::TaskFilter(std::string *dirty_path, std::st
     }
 
     DirtyFile.close();
-    std::ofstream CleanFile(*clean_path);
+    // Shuffle the data.
     std::shuffle(words_list.begin(), words_list.end(), std::mt19937(std::random_device()()));
+    // Remove duplicates.
     words_list.erase(unique(words_list.begin(), words_list.end()), words_list.end());
 
-    for (auto &i: words_list) {
-        CleanFile << i << "\n";
-    }
-
-    CleanFile.close();
     return words_list;
 }

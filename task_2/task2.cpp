@@ -1,20 +1,22 @@
-#include <cstdio>
 #include <iostream>
 #include <fstream>
 #include <unistd.h>
 #include <cstdlib>
 #include <wait.h>
-#include <bits/stdc++.h>
 #include "../task_1/word_filter.h"
 #include "../utilities/function_timer.h"
-
-#define PROCESS_NUM 12
 
 std::vector<std::vector<std::string>> getLengthSepLists() {
     std::string dirty_file_path = "../data/dirty.txt";
     std::string clean_file_path = "../data/clean_cpp.txt";
+    std::vector<std::string> clean_words;
+    std::string curr_line;
     std::vector<std::vector<std::string>> s;
-    auto clean_words = WordFilter::TaskFilter(&dirty_file_path, &clean_file_path);
+    WordFilter::task_filter(&dirty_file_path, &clean_file_path);
+    std::ifstream CleanFile(clean_file_path);
+    while (std::getline(CleanFile, curr_line)) {
+        clean_words.push_back(curr_line);
+    }
 
     for (long unsigned int i = MIN_WORD_LENGTH; i <= MAX_WORD_LENGTH; ++i) {
         std::vector<std::string> n_length_list;

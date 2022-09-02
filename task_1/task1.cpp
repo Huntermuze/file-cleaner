@@ -17,8 +17,8 @@ int main(int argc, char **argv) {
         return EXIT_FAILURE;
     }
 
-    std::cout << "Cleaning file " << dirty_file_path << "..." << std::endl;
-    double time_taken = time_func(WordFilter::TaskFilter, &dirty_file_path, &clean_file_path).first;
+    std::cout << "Cleaning file \"" << dirty_file_path << "\"..." << std::endl;
+    double time_taken = time_func(WordFilter::task_filter, &dirty_file_path, &clean_file_path).first;
     std::cout << "Successfully cleansed dirty file. Check the current directory "
                  "for the cleaned file located at \"" << clean_file_path << "\"." << std::endl;
 
