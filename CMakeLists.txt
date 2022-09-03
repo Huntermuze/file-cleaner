@@ -8,4 +8,6 @@ add_executable(Operating_System_Principles
         task_1/word_filter.h
         utilities/function_timer.h
         utilities/function_timer.cpp
-        task_2/task2.cpp)
+        utilities/utils.cpp
+        utilities/utils.h
+        task_3/task3.cpp)

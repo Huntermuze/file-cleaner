@@ -1,6 +1,6 @@
 #include <iostream>
-#include "../utilities/function_timer.h"
 #include "word_filter.h"
+#include "../utilities/function_timer.h"
 
 int main(int argc, char **argv) {
     // Skipping proper validation & error-checking, as this is not important in this assignment.

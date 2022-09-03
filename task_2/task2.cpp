@@ -3,7 +3,7 @@
 #include <unistd.h>
 #include <cstdlib>
 #include <wait.h>
-#include "../task_1/word_filter.h"
+#include "../utilities/utils.h"
 #include "../utilities/function_timer.h"
 
 std::vector<std::vector<std::string>> getLengthSepLists() {
@@ -31,10 +31,6 @@ std::vector<std::vector<std::string>> getLengthSepLists() {
     return s;
 }
 
-bool compareString(const std::string_view &s1, const std::string_view &s2) {
-    return s1.substr(MIN_WORD_LENGTH - 1) < s2.substr(MIN_WORD_LENGTH - 1);
-}
-
 int map2() {
     // Check if this gets copied. If it does, fix it. Copying is expensive.
     std::vector<std::vector<std::string>> lists = getLengthSepLists();
@@ -57,7 +53,7 @@ int map2() {
         words = lists[lists.size() - 1];
     }
 
-    std::sort(words.begin(), words.end(), compareString);
+    std::sort(words.begin(), words.end(), WordFilter::compare_string);
     std::ofstream OutFile("separated_lists/length_" + std::to_string(words[0].length()) + ".txt");
     for (auto &word: words) {
         OutFile << word << "\n";
@@ -109,7 +105,7 @@ int reduce() {
     int len_chosen_word;
     int desired_wordlist_pos;
     while (!comparison_container.empty()) {
-        std::sort(comparison_container.begin(), comparison_container.end(), compareString);
+        std::sort(comparison_container.begin(), comparison_container.end(), WordFilter::compare_string);
         std::string to_add = comparison_container[0];
         SortedList << to_add << "\n";
         // Ignore narrowing conversion warning, as we know for a fact that this vector will be at most 13 elements in size.
@@ -132,7 +128,9 @@ int reduce() {
     return EXIT_SUCCESS;
 }
 
-int main() {
+// TODO split reduce into "merge" helper func.
+
+int main(int argc, char **argv) {
     auto map2_run = time_func(map2);
     double time_map2 = map2_run.first;
     int status_map2 = map2_run.second;
