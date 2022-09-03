@@ -1,0 +1,18 @@
+
+t3: task3.o utils.o word_filter.o
+	g++ task3.o utils.o word_filter.o -o t3
+
+utils.o: ../utilities/utils.h ../utilities/utils.cpp ../utilities/function_timer.h ../utilities/function_timer.cpp
+	g++ -c -Wall -Werror -g ../utilities/function_timer.cpp ../utilities/utils.cpp
+
+word_filter.o: ../task_1/word_filter.h ../task_1/word_filter.cpp
+	g++ -c -Wall -Werror -g ../task_1/word_filter.cpp
+
+task3.o: task3.cpp
+	g++ -c -Wall -g task3.cpp
+
+clean:
+	rm *.o t3
+
+# target: dependencies
+#	action
