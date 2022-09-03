@@ -45,6 +45,12 @@ void *write_to_fifo(void *args) {
 //        // FIXME
 ////        return 6;
 //    }
+    auto sort_rule = [](const int &i1, const int &i2) -> bool {
+        return clean_words[i1].substr(MIN_WORD_LENGTH - 1) < clean_words[i2].substr(MIN_WORD_LENGTH - 1);
+    };
+
+    std::sort(arguments->index3.begin(), arguments->index3.end(), sort_rule);
+
     for (unsigned long i: arguments->index3) {
         write(fd, &clean_words[i], sizeof(clean_words[i]));
     }
@@ -174,11 +180,9 @@ void *reduce3(void *) {
     return EXIT_SUCCESS;
 }
 
-
-int main(int argc, char **argv) {
+int generate_sorted_list() {
     pthread_t map_thread;
     pthread_t reduce_thread;
-    // FIXME it is very redundant to create two threads here, when they MUST be executed sequentially.
     if (pthread_create(&map_thread, nullptr, &map3, nullptr) != 0) {
         // FIXME print error to cerr.
         return EXIT_FAILURE;
@@ -193,6 +197,11 @@ int main(int argc, char **argv) {
     if (pthread_join(reduce_thread, nullptr) != 0) {
         return 3;
     }
+}
+
+int main(int argc, char **argv) {
+    auto run = time_func(generate_sorted_list);
+    std::cout << std::endl << "Time taken in seconds: " << run.first << "s." << std::endl;
 
     return EXIT_SUCCESS;
 }
