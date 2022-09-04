@@ -12,11 +12,9 @@
 #include <fcntl.h>
 #include <pthread.h>
 
-// TODO consider changing to array IF NECESSARY (according to spec). Probably a good idea to use vectors
-//  ONLY when you dont know how many items will be in it - change this later. Better design, more marks.
-//   Probably need a vector for index_lists.
 std::string dirty_file_path = "../data/dirty.txt";
-auto clean_words = WordFilter::task_filter(&dirty_file_path);
+std::vector<std::string> clean_words;
+
 struct WriteFunctionArgs {
     std::string fifo_path;
     std::vector<long unsigned int> index3;
@@ -40,11 +38,6 @@ void *read_from_fifo(void *fifo_path) {
 void *write_to_fifo(void *args) {
     auto *arguments = (struct WriteFunctionArgs *) args;
     int fd = open(arguments->fifo_path.c_str(), O_WRONLY);
-
-//    if (fd == -1) {
-//        // FIXME
-////        return 6;
-//    }
     auto sort_rule = [](const int &i1, const int &i2) -> bool {
         return clean_words[i1].substr(MIN_WORD_LENGTH - 1) < clean_words[i2].substr(MIN_WORD_LENGTH - 1);
     };
@@ -59,13 +52,6 @@ void *write_to_fifo(void *args) {
 
     return EXIT_SUCCESS;
 }
-
-
-// Sort the in-memory lists like normal. EAch thread then dumps its sorted list to the FIFO file - opens a FIFO for write.
-// Then the reduce3 thread should open all those fifo files for read and read all the data, then do the merging step
-// (as in task 2) to produce a single file. The 13 threads will terminate as soon as the reduce3 thread opens the file
-// and the 13 threads finish writing all their contents to the fifo files. Then the map3 thread ends, and
-// reduce3 thread merges. Then reduce3 thread ends, and prog terminates.
 
 void *map3(void *) {
     std::vector<std::vector<long unsigned int>> index_lists;
@@ -85,8 +71,7 @@ void *map3(void *) {
         if (mkfifo(("fifo_files/length_" + std::to_string(k) + ".txt").c_str(), 0777) == -1 &&
             errno != EEXIST) {
             std::cerr << "Failed to create a FIFO file." << std::endl;
-            // FIXME
-//            return 4;
+            return (void *) 5;
         }
     }
 
@@ -99,14 +84,15 @@ void *map3(void *) {
         };
 
         if (pthread_create(&workers[m - MIN_WORD_LENGTH], nullptr, &write_to_fifo, args) != 0) {
-            //fixme put error
-//            return 7;
+            std::cerr << "Failed to create worker thread." << std::endl;
+            return (void *) 6;
         }
     }
 
     for (unsigned long worker: workers) {
         if (pthread_join(worker, nullptr) != 0) {
-//            return 8;
+            std::cerr << "Failed to create join thread." << std::endl;
+            return (void *) 7;
         }
     }
 
@@ -154,8 +140,8 @@ void *reduce3(void *) {
     for (int i = MIN_WORD_LENGTH; i <= MAX_WORD_LENGTH; ++i) {
         auto *fifo_path = new std::string("fifo_files/length_" + std::to_string(i) + ".txt");
         if (pthread_create(&workers[i - MIN_WORD_LENGTH], nullptr, &read_from_fifo, fifo_path) != 0) {
-            //fixme put error
-//            return 7;
+            std::cerr << "Failed to create worker thread." << std::endl;
+            return (void *) 8;
         }
     }
 
@@ -164,8 +150,8 @@ void *reduce3(void *) {
     for (unsigned long worker: workers) {
         std::vector<std::string> *length_n_fifo;
         if (pthread_join(worker, (void **) &length_n_fifo) != 0) {
-            //FIXME
-//            return 8;
+            std::cerr << "Failed to create join thread." << std::endl;
+            return (void *) 9;
         }
         length_n_fifos->push_back(*length_n_fifo);
 
@@ -181,27 +167,35 @@ void *reduce3(void *) {
 }
 
 int generate_sorted_list() {
+    clean_words = WordFilter::task_filter(&dirty_file_path);
     pthread_t map_thread;
     pthread_t reduce_thread;
+
     if (pthread_create(&map_thread, nullptr, &map3, nullptr) != 0) {
-        // FIXME print error to cerr.
+        std::cerr << "Failed to create map thread." << std::endl;
         return EXIT_FAILURE;
     }
     if (pthread_create(&reduce_thread, nullptr, &reduce3, nullptr) != 0) {
-        // FIXME print error to cerr.
-        return EXIT_FAILURE;
-    }
-    if (pthread_join(map_thread, nullptr) != 0) {
+        std::cerr << "Failed to create reduce thread." << std::endl;
         return 2;
     }
-    if (pthread_join(reduce_thread, nullptr) != 0) {
+    if (pthread_join(map_thread, nullptr) != 0) {
+        std::cerr << "Failed to join map thread." << std::endl;
         return 3;
     }
+    if (pthread_join(reduce_thread, nullptr) != 0) {
+        std::cerr << "Failed to join reduce thread." << std::endl;
+        return 4;
+    }
+
+    return EXIT_SUCCESS;
 }
 
 int main(int argc, char **argv) {
-    auto run = time_func(generate_sorted_list);
-    std::cout << std::endl << "Time taken in seconds: " << run.first << "s." << std::endl;
+    auto task3_run = time_func(generate_sorted_list);
+    if (task3_run.second == 0) {
+        std::cout << std::endl << "Time taken in seconds: " << task3_run.first << "s." << std::endl;
+    }
 
-    return EXIT_SUCCESS;
+    return task3_run.second;
 }

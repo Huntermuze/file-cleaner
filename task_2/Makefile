@@ -1,9 +1,12 @@
 
-t2: task2.o utils.o word_filter.o
-	g++ task2.o utils.o word_filter.o -o t2
+t2: task2.o function_timer.o word_filter.o utils.o
+	g++ task2.o function_timer.o word_filter.o utils.o -o t2
 
-utils.o: ../utilities/function_timer.h ../utilities/function_timer.cpp
+function_timer.o: ../utilities/function_timer.h ../utilities/function_timer.cpp
 	g++ -c -Wall -Werror -g ../utilities/function_timer.cpp
+
+utils.o: ../utilities/utils.cpp ../utilities/utils.h
+	g++ -c -Wall -Werror -g ../utilities/utils.cpp
 
 word_filter.o: ../task_1/word_filter.h ../task_1/word_filter.cpp
 	g++ -c -Wall -Werror -g ../task_1/word_filter.cpp
