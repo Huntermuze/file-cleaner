@@ -9,9 +9,9 @@
 namespace WordFilter {
     int task_filter(std::string *dirty_path, std::string *clean_path);
 
-    std::vector<std::string> task_filter(std::string *dirty_path);
+    std::vector<std::string> *task_filter(std::string *dirty_path);
 
-    std::vector<std::string> task_filter_dual(std::string *dirty_path, std::string *clean_path);
+    std::vector<std::string> *task_filter_dual(std::string *dirty_path, std::string *clean_path);
 }
 
 

@@ -1,6 +1,9 @@
 
-t1: task1.o function_timer.o word_filter.o
-	g++ task1.o function_timer.o word_filter.o -o t1
+task1: task1.o function_timer.o word_filter.o utils.o
+	g++ task1.o function_timer.o word_filter.o utils.o -o task1
+
+utils.o: ../utilities/utils.cpp ../utilities/utils.h
+	g++ -c -Wall -Werror -g ../utilities/utils.cpp
 
 function_timer.o: ../utilities/function_timer.h ../utilities/function_timer.cpp
 	g++ -c -Wall -Werror -g ../utilities/function_timer.cpp
@@ -12,7 +15,7 @@ task1.o: task1.cpp
 	g++ -c -Wall -Werror -g task1.cpp
 
 clean:
-	rm *.o t1
+	rm *.o task1
 
 # target: dependencies
 #	action

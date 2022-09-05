@@ -4,6 +4,8 @@
 #include <iostream>
 #include "../task_1/word_filter.h"
 
+void unlink_fifos();
+
 namespace WordFilter {
     bool compare_string(const std::string_view &s1, const std::string_view &s2);
 

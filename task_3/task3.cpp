@@ -2,7 +2,6 @@
 #include <fstream>
 #include <unistd.h>
 #include <cstdlib>
-#include <wait.h>
 #include "../utilities/function_timer.h"
 #include "../utilities/utils.h"
 
@@ -13,7 +12,7 @@
 #include <pthread.h>
 
 std::string dirty_file_path = "../data/dirty.txt";
-std::vector<std::string> clean_words;
+std::vector<std::string> *clean_words;
 
 struct WriteFunctionArgs {
     std::string fifo_path;
@@ -39,13 +38,13 @@ void *write_to_fifo(void *args) {
     auto *arguments = (struct WriteFunctionArgs *) args;
     int fd = open(arguments->fifo_path.c_str(), O_WRONLY);
     auto sort_rule = [](const int &i1, const int &i2) -> bool {
-        return clean_words[i1].substr(MIN_WORD_LENGTH - 1) < clean_words[i2].substr(MIN_WORD_LENGTH - 1);
+        return (*clean_words)[i1].substr(MIN_WORD_LENGTH - 1) < (*clean_words)[i2].substr(MIN_WORD_LENGTH - 1);
     };
 
     std::sort(arguments->index3.begin(), arguments->index3.end(), sort_rule);
 
     for (unsigned long i: arguments->index3) {
-        write(fd, &clean_words[i], sizeof(clean_words[i]));
+        write(fd, &(*clean_words)[i], sizeof((*clean_words)[i]));
     }
     close(fd);
     delete arguments;
@@ -54,14 +53,11 @@ void *write_to_fifo(void *args) {
 }
 
 void *map3(void *) {
-    std::vector<std::vector<long unsigned int>> index_lists;
     // Fill the index_lists vector.
-    for (short i = 0; i <= MAX_WORD_LENGTH - MIN_WORD_LENGTH; ++i) {
-        index_lists.emplace_back();
-    }
+    std::vector<std::vector<long unsigned int>> index_lists(13);
 
-    for (long unsigned int j = 0; j < clean_words.size(); ++j) {
-        auto word_length = clean_words[j].length();
+    for (long unsigned int j = 0; j < clean_words->size(); ++j) {
+        auto word_length = (*clean_words)[j].length();
         auto length_to_position = word_length - MIN_WORD_LENGTH;
         index_lists[length_to_position].push_back(j);
     }
@@ -77,7 +73,6 @@ void *map3(void *) {
 
     pthread_t workers[13];
     for (short m = MIN_WORD_LENGTH; m <= MAX_WORD_LENGTH; ++m) {
-        // FIXME stop this struct from constantly copying - makes it much slower.
         auto *args = new WriteFunctionArgs{
                 .fifo_path = "fifo_files/length_" + std::to_string(m) + ".txt",
                 .index3 = index_lists[m - MIN_WORD_LENGTH]
@@ -99,11 +94,11 @@ void *map3(void *) {
     return EXIT_SUCCESS;
 }
 
-void merge(std::vector<std::vector<std::string>> *length_n_fifos) {
+void merge_and_write(std::vector<std::vector<std::string>> *length_n_fifos) {
     int len_chosen_word;
     int desired_wordlist_pos;
     int length_n_list_counters[13] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-    std::ofstream SortedList("sorted_list.txt");
+    std::ofstream SortedList("../data/task3_sorted_list.txt");
     std::vector<std::string> comparison_container;
 
     for (long unsigned int i = 0; i < length_n_fifos->size(); ++i) {
@@ -157,7 +152,7 @@ void *reduce3(void *) {
 
     }
     std::sort(length_n_fifos->begin(), length_n_fifos->end(), WordFilter::compare_vector_of_string);
-    merge(length_n_fifos);
+    merge_and_write(length_n_fifos);
 
 //    for (int i = 0; i < length_n_fifos->size(); ++i) {
 //        delete &length_n_fifos[i];
@@ -188,10 +183,11 @@ int generate_sorted_list() {
         return 4;
     }
 
+    delete clean_words;
     return EXIT_SUCCESS;
 }
 
-int main(int argc, char **argv) {
+int main() {
     auto task3_run = time_func(generate_sorted_list);
     if (task3_run.second == 0) {
         std::cout << std::endl << "Time taken in seconds: " << task3_run.first << "s." << std::endl;
