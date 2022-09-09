@@ -4,9 +4,6 @@
 #include "../utilities/utils.h"
 #include "../utilities/function_timer.h"
 
-// TODO CHECK IF CHANGING THE ORDER OF -k1.3 and -u on bash sort does anything! What if it isn't
-// sorting properly. May need to remove all uniques, THEN sort.
-
 int sort_and_write(std::string *dirty_file_path, std::string *clean_file_path) {
     auto *words_list = WordFilter::task_filter(dirty_file_path);
     std::ofstream CleanFile(*clean_file_path);
