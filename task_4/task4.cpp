@@ -33,6 +33,7 @@ void *read_from_fifo(void *args) {
     auto *curr_word = new std::string();
     auto *length_n_fifo = new std::vector<std::string>();
 
+    printf("Reading in file %s. Then creating a vector of these length n words.\n", arguments->fifo_path.c_str());
     while (read(fd, curr_word, sizeof(*curr_word)) != 0) {
         length_n_fifo->push_back(std::string(*curr_word));
     }
@@ -50,6 +51,8 @@ void *write_to_fifo(void *args) {
         return (*clean_words)[i1].substr(MIN_WORD_LENGTH - 1) < (*clean_words)[i2].substr(MIN_WORD_LENGTH - 1);
     };
 
+    printf("Sorting (and writing to file) words of length %lu. There are %zu words in this list.\n",
+           (*clean_words)[arguments->index4[0]].length(), arguments->index4.size());
     std::sort(arguments->index4.begin(), arguments->index4.end(), sort_rule);
 
     for (unsigned long i: arguments->index4) {
@@ -68,7 +71,7 @@ short *calculate_thread_priorities(std::vector<std::vector<long unsigned int>> *
         return p1.second < p2.second;
     };
 
-    for (int i = 0; i < index_lists->size(); ++i) {
+    for (unsigned long i = 0; i < index_lists->size(); ++i) {
         index_to_size_list[i] = {i, (*index_lists)[i].size()};
     }
 
@@ -86,6 +89,7 @@ std::vector<std::vector<long unsigned int>> *create_indexes_list() {
     auto *index_lists = new std::vector<std::vector<long unsigned int>>(13);
 
     // Fill the index_lists vector.
+    printf("Building index list.\n");
     for (long unsigned int j = 0; j < clean_words->size(); ++j) {
         auto word_length = (*clean_words)[j].length();
         auto length_to_position = word_length - MIN_WORD_LENGTH;
@@ -100,31 +104,37 @@ void *map4(void *arg) {
 
     // Create 13 FIFO files IFF they do not exist.
     for (short k = MIN_WORD_LENGTH; k <= MAX_WORD_LENGTH; ++k) {
-        if (mkfifo(("fifo_files/length_" + std::to_string(k) + ".txt").c_str(), 0777) == -1 &&
+        auto fifo_path = "fifo_files/length_" + std::to_string(k) + ".txt";
+        if (mkfifo(fifo_path.c_str(), 0777) == -1 &&
             errno != EEXIST) {
-            std::cerr << "Failed to create a FIFO file." << std::endl;
+            fprintf(stderr, "Failed to create a FIFO file.\n");
             return (void *) 5;
         }
+
+        printf("Successfully creating fifo file %s.\n", fifo_path.c_str());
     }
 
     pthread_t workers[13];
     for (short m = MIN_WORD_LENGTH; m <= MAX_WORD_LENGTH; ++m) {
-        // FIXME stop this struct from constantly copying - makes it much slower.
         auto *args = new WriteFunctionArgs{
                 .thread_priority = th_priorities[m - MIN_WORD_LENGTH],
                 .fifo_path = "fifo_files/length_" + std::to_string(m) + ".txt",
                 .index4 = (*index_lists)[m - MIN_WORD_LENGTH]
         };
 
+        printf("Pass fifo file path (%s), index4 list and thread priority (%d) to upcoming map thread.\n",
+               args->fifo_path.c_str(), args->thread_priority);
         if (pthread_create(&workers[m - MIN_WORD_LENGTH], nullptr, &write_to_fifo, args) != 0) {
-            std::cerr << "Failed to create worker thread." << std::endl;
+            fprintf(stderr, "Failed to create worker thread.\n");
             return (void *) 6;
         }
+
+        printf("Created map worker thread with id %lu.\n", workers[m - MIN_WORD_LENGTH]);
     }
 
     for (unsigned long worker: workers) {
         if (pthread_join(worker, nullptr) != 0) {
-            std::cerr << "Failed to create join thread." << std::endl;
+            fprintf(stderr, "Failed to join worker thread.\n");
             return (void *) 7;
         }
     }
@@ -142,24 +152,26 @@ void *reduce4(void *) {
                 .thread_priority = th_priorities[i - MIN_WORD_LENGTH],
                 .fifo_path = "fifo_files/length_" + std::to_string(i) + ".txt",
         };
+        printf("Pass fifo file path (%s) and thread priority (%d) to upcoming reduce thread.\n",
+               args->fifo_path.c_str(), args->thread_priority);
         if (pthread_create(&workers[i - MIN_WORD_LENGTH], nullptr, &read_from_fifo, args) != 0) {
-            std::cerr << "Failed to create worker thread." << std::endl;
+            fprintf(stderr, "Failed to create worker thread.\n");
             return (void *) 8;
         }
+        printf("Created reduce worker thread with id %lu.\n", workers[i - MIN_WORD_LENGTH]);
     }
 
-    // FIXME might be the problem where all the threads fill up length_n_fifos in a random order.
-    //  means we have extra overhead of having to search for items in that list.
     for (unsigned long worker: workers) {
         std::vector<std::string> *length_n_fifo;
         if (pthread_join(worker, (void **) &length_n_fifo) != 0) {
-            std::cerr << "Failed to create join thread." << std::endl;
+            fprintf(stderr, "Failed to join worker thread.\n");
             return (void *) 9;
         }
         length_n_fifos->push_back(*length_n_fifo);
 
     }
     std::sort(length_n_fifos->begin(), length_n_fifos->end(), WordFilter::compare_vector_of_string);
+    printf("Perform merge algorithm, and then write final result to file %s\n", output_path.c_str());
     WordFilter::merge_and_write(length_n_fifos, output_path);
 //    for (int i = 0; i < length_n_fifos->size(); ++i) {
 //        delete &length_n_fifos[i];
@@ -169,26 +181,29 @@ void *reduce4(void *) {
 }
 
 int generate_sorted_list() {
+    printf("Obtaining clean words list.\n");
     clean_words = WordFilter::task_filter(&dirty_file_path);
     auto *index_lists = create_indexes_list();
     th_priorities = calculate_thread_priorities(index_lists);
     pthread_t map_thread;
     pthread_t reduce_thread;
 
+    printf("Begin mapping process and create map thread with id %lu...\n", map_thread);
     if (pthread_create(&map_thread, nullptr, &map4, index_lists) != 0) {
-        std::cerr << "Failed to create map thread." << std::endl;
+        fprintf(stderr, "Failed to create map thread.\n");
         return EXIT_FAILURE;
     }
+    printf("Begin reduce process and create reduce map thread with id %lu...\n", reduce_thread);
     if (pthread_create(&reduce_thread, nullptr, &reduce4, nullptr) != 0) {
-        std::cerr << "Failed to create reduce thread." << std::endl;
+        fprintf(stderr, "Failed to create reduce thread.\n");
         return 2;
     }
     if (pthread_join(map_thread, nullptr) != 0) {
-        std::cerr << "Failed to join map thread." << std::endl;
+        fprintf(stderr, "Failed to join map thread.\n");
         return 3;
     }
     if (pthread_join(reduce_thread, nullptr) != 0) {
-        std::cerr << "Failed to join reduce thread." << std::endl;
+        fprintf(stderr, "Failed to reduce map thread.\n");
         return 4;
     }
 
