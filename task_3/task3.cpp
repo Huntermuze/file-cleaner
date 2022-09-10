@@ -1,17 +1,17 @@
 #include <iostream>
 #include <unistd.h>
 #include <cstdlib>
-#include "../utilities/function_timer.h"
-#include "../utilities/utils.h"
-
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <cerrno>
 #include <fcntl.h>
 #include <pthread.h>
+#include "../utilities/function_timer.h"
+#include "../utilities/utils.h"
 
 std::string dirty_file_path = "../data/dirty.txt";
 std::vector<std::string> *clean_words;
+std::vector<std::vector<long unsigned int>> index_lists(13);
 
 struct WriteFunctionArgs {
     std::string fifo_path;
@@ -56,8 +56,6 @@ void *write_to_fifo(void *args) {
 
 void *map3(void *) {
     // Fill the index_lists vector.
-    std::vector<std::vector<long unsigned int>> index_lists(13);
-
     printf("Building index list.\n");
     for (long unsigned int j = 0; j < clean_words->size(); ++j) {
         auto word_length = (*clean_words)[j].length();
@@ -162,6 +160,12 @@ int generate_sorted_list() {
     if (pthread_join(reduce_thread, nullptr) != 0) {
         fprintf(stderr, "Failed to reduce map thread.\n");
         return 4;
+    }
+
+    for (auto &index_list: index_lists) {
+        printf("There are %zu words in the list of length %lu. In total, this %.2f%% of the words.\n", index_list.size(),
+               (*clean_words)[index_list[0]].length(),
+               ((double) index_list.size() / (double) clean_words->size()) * 100.0);
     }
 
     delete clean_words;
