@@ -15,17 +15,7 @@
 
 bool refresh_data = true;
 int word_length_counts[13] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-pthread_t reduce_workers[13];
 std::vector<int *> reduce_file_descriptors(13);
-
-
-struct ReduceThreadArgs {
-    int index_of_word_to_increment;
-    int *fd;
-};
-
-// TODO have an arg that shows it for real-time.
-// TODO have the default program just execute and show the results at the end.
 
 // MAP opens the fifos for reading, and sends the word to the appropriate reduce thread, which the reduce thread
 // then increments the counter for that length n word and another thread displays the word_length_counts on screen real-time.
@@ -36,11 +26,8 @@ void *map5(void *arg) {
     auto *curr_word = new std::string();
 
     while (read(fd, curr_word, sizeof(*curr_word)) != 0) {
-        int prev_val = word_length_counts[curr_word->length() - MIN_WORD_LENGTH];
-        ++prev_val;
-        write(reduce_file_descriptors[curr_word->length() - MIN_WORD_LENGTH][1], &prev_val, sizeof(int));
+        ++word_length_counts[curr_word->length() - MIN_WORD_LENGTH];
     }
-
 
     refresh_data = false;
     close(fd);
@@ -48,24 +35,6 @@ void *map5(void *arg) {
 
     return EXIT_SUCCESS;
 }
-
-// TODO I used file descriptors to get that nice blocking behaviour, so that a thread sleeps when waiting, instead of
-//  being busy waiting.
-void *increment_counter(void *args) {
-    std::cout << "BLOCKING!"
-    auto *arguments = (struct ReduceThreadArgs *) args;
-
-    while (refresh_data) {
-        int new_count;
-        read(arguments->fd[0], &new_count, sizeof(int));
-        word_length_counts[arguments->index_of_word_to_increment] = new_count;
-    }
-    close(arguments->fd[0]);
-    std::cout << "HERE?" << std::endl;
-
-    return EXIT_SUCCESS;
-}
-
 
 void *display_count(void *) {
     printf("LIST DATA: (COUNT), (RATIO)\n");
@@ -90,32 +59,7 @@ void *display_count(void *) {
 //            printf("%s", cursup);
 //        }
 //        printf("\r");
-
-        std::cout << sum << std::endl;
     }
-
-    return EXIT_SUCCESS;
-}
-
-void *reduce5(void *) {
-    for (short m = MIN_WORD_LENGTH; m <= MAX_WORD_LENGTH; ++m) {
-        auto *args = new ReduceThreadArgs{
-                .index_of_word_to_increment = m - MIN_WORD_LENGTH,
-                .fd = reduce_file_descriptors[m - MIN_WORD_LENGTH]
-        };
-
-        if (pthread_create(&reduce_workers[m - MIN_WORD_LENGTH], nullptr, &increment_counter, args) != 0) {
-            fprintf(stderr, "Failed to create reduce worker thread.\n");
-            return (void *) 6;
-        }
-    }
-
-//    for (unsigned long worker: reduce_workers) {
-//        if (pthread_join(worker, nullptr) != 0) {
-//            fprintf(stderr, "Failed to join worker thread.\n");
-//            return (void *) 7;
-//        }
-//    }
 
     return EXIT_SUCCESS;
 }
@@ -133,26 +77,6 @@ int run_task5() {
         return 10;
     } else if (status == 0) {
         printf("Successfully created fifo file: %s.\n", fifo_path->c_str());
-    }
-
-    // Create 13 pipes.
-    for (int i = 0; i < 13; ++i) {
-        int *fd = new int[2];
-        if (pipe(fd) == -1) {
-            fprintf(stderr, "Failed to create a pipe.\n");
-            return 9;
-        }
-        reduce_file_descriptors[i] = fd;
-    }
-
-    if (pthread_create(&reduce_thread, nullptr, &reduce5, nullptr) != 0) {
-        fprintf(stderr, "Failed to create reduce thread.\n");
-        return 4;
-    }
-
-    if (pthread_join(reduce_thread, nullptr) != 0) {
-        fprintf(stderr, "Failed to join map thread.\n");
-        return 8;
     }
 
     if (pthread_create(&map_thread, nullptr, &map5, fifo_path) != 0) {
