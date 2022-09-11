@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <fstream>
 #include "utils.h"
+#include "../task_1/word_filter.h"
 
 bool WordFilter::compare_string(const std::string_view &s1, const std::string_view &s2) {
     return s1.substr(MIN_WORD_LENGTH - 1) < s2.substr(MIN_WORD_LENGTH - 1);
@@ -11,7 +12,7 @@ bool WordFilter::compare_vector_of_string(const std::vector<std::string> &s1, co
     return s1[0].length() < s2[0].length();
 }
 
-void WordFilter::merge_and_write(std::vector<std::vector<std::string>> *length_n_fifos, std::string& sorted_file_path) {
+void WordFilter::merge_and_write(std::vector<std::vector<std::string>> *length_n_fifos, std::string &sorted_file_path) {
     int len_chosen_word;
     int desired_wordlist_pos;
     int length_n_list_counters[13] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};

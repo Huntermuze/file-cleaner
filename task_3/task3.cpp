@@ -7,6 +7,7 @@
 #include <fcntl.h>
 #include <pthread.h>
 #include "../utilities/function_timer.h"
+#include "../task_1/word_filter.h"
 #include "../utilities/utils.h"
 
 std::string dirty_file_path = "../data/dirty.txt";
@@ -61,17 +62,6 @@ void *map3(void *) {
         auto word_length = (*clean_words)[j].length();
         auto length_to_position = word_length - MIN_WORD_LENGTH;
         index_lists[length_to_position].push_back(j);
-    }
-
-    // Create 13 FIFO files.
-    for (short k = MIN_WORD_LENGTH; k <= MAX_WORD_LENGTH; ++k) {
-        auto fifo_path = "fifo_files/length_" + std::to_string(k) + ".txt";
-        if (mkfifo(fifo_path.c_str(), 0777) == -1 &&
-            errno != EEXIST) {
-            fprintf(stderr, "Failed to create a FIFO file.\n");
-            return (void *) 5;
-        }
-        printf("Successfully creating fifo file %s.\n", fifo_path.c_str());
     }
 
     pthread_t workers[13];
@@ -143,6 +133,19 @@ int generate_sorted_list() {
     pthread_t map_thread;
     pthread_t reduce_thread;
 
+    // Create 13 FIFO files IFF they do not exist.
+    for (short k = MIN_WORD_LENGTH; k <= MAX_WORD_LENGTH; ++k) {
+        auto fifo_path = "fifo_files/length_" + std::to_string(k) + ".txt";
+        int status = mkfifo(fifo_path.c_str(), 0777);
+
+        if (status == -1 && errno != EEXIST) {
+            fprintf(stderr, "Failed to create a FIFO file.\n");
+            return 5;
+        } else if (status == 0) {
+            printf("Successfully created fifo file: %s.\n", fifo_path.c_str());
+        }
+    }
+
     printf("Begin mapping process and create map thread with id %lu...\n", map_thread);
     if (pthread_create(&map_thread, nullptr, &map3, nullptr) != 0) {
         fprintf(stderr, "Failed to create map thread.\n");
@@ -163,12 +166,15 @@ int generate_sorted_list() {
     }
 
     for (auto &index_list: index_lists) {
-        printf("There are %zu words in the list of length %lu. In total, this %.2f%% of the words.\n", index_list.size(),
+        printf("There are %zu words in the list of length %lu. In total, this %.2f%% of the total words.\n",
+               index_list.size(),
                (*clean_words)[index_list[0]].length(),
                ((double) index_list.size() / (double) clean_words->size()) * 100.0);
     }
 
     delete clean_words;
+    unlink_fifos();
+
     return EXIT_SUCCESS;
 }
 

@@ -1,15 +1,14 @@
 #include <iostream>
 #include <cstdlib>
 #include <unistd.h>
-#include <cmath>
-#include "../utilities/function_timer.h"
-#include "../utilities/utils.h"
-
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <cerrno>
 #include <fcntl.h>
 #include <pthread.h>
+#include "../utilities/function_timer.h"
+#include "../utilities/utils.h"
+#include "../task_1/word_filter.h"
 
 std::string dirty_file_path = "../data/dirty.txt";
 std::vector<std::string> *clean_words;
@@ -76,9 +75,8 @@ short *calculate_thread_priorities(std::vector<std::vector<long unsigned int>> *
     }
 
     std::sort(index_to_size_list.begin(), index_to_size_list.end(), sort_rule);
-
-    for (int j = 0; j < 13; ++j) {
-        auto index = index_to_size_list[j].first;
+    for (int j = -13; j < 0; ++j) {
+        auto index = index_to_size_list[j + 13].first;
         th_priority_of_each_index_list[index] = (short) j;
     }
 
@@ -101,20 +99,8 @@ std::vector<std::vector<long unsigned int>> *create_indexes_list() {
 
 void *map4(void *arg) {
     auto *index_lists = static_cast<std::vector<std::vector<long unsigned int>> *>(arg);
-
-    // Create 13 FIFO files IFF they do not exist.
-    for (short k = MIN_WORD_LENGTH; k <= MAX_WORD_LENGTH; ++k) {
-        auto fifo_path = "fifo_files/length_" + std::to_string(k) + ".txt";
-        if (mkfifo(fifo_path.c_str(), 0777) == -1 &&
-            errno != EEXIST) {
-            fprintf(stderr, "Failed to create a FIFO file.\n");
-            return (void *) 5;
-        }
-
-        printf("Successfully creating fifo file %s.\n", fifo_path.c_str());
-    }
-
     pthread_t workers[13];
+
     for (short m = MIN_WORD_LENGTH; m <= MAX_WORD_LENGTH; ++m) {
         auto *args = new WriteFunctionArgs{
                 .thread_priority = th_priorities[m - MIN_WORD_LENGTH],
@@ -122,8 +108,8 @@ void *map4(void *arg) {
                 .index4 = (*index_lists)[m - MIN_WORD_LENGTH]
         };
 
-        printf("Pass fifo file path (%s), index4 list and thread priority (%d) to upcoming map thread.\n",
-               args->fifo_path.c_str(), args->thread_priority);
+        printf("Pass fifo file path (%s), index4 list and thread priority %d (where nice value is %d) to upcoming map thread.\n",
+               args->fifo_path.c_str(), 20 + args->thread_priority, args->thread_priority);
         if (pthread_create(&workers[m - MIN_WORD_LENGTH], nullptr, &write_to_fifo, args) != 0) {
             fprintf(stderr, "Failed to create worker thread.\n");
             return (void *) 6;
@@ -152,8 +138,8 @@ void *reduce4(void *) {
                 .thread_priority = th_priorities[i - MIN_WORD_LENGTH],
                 .fifo_path = "fifo_files/length_" + std::to_string(i) + ".txt",
         };
-        printf("Pass fifo file path (%s) and thread priority (%d) to upcoming reduce thread.\n",
-               args->fifo_path.c_str(), args->thread_priority);
+        printf("Pass fifo file path (%s) and thread priority %d (where nice value is %d) to upcoming reduce thread.\n",
+               args->fifo_path.c_str(), 20 + args->thread_priority, args->thread_priority);
         if (pthread_create(&workers[i - MIN_WORD_LENGTH], nullptr, &read_from_fifo, args) != 0) {
             fprintf(stderr, "Failed to create worker thread.\n");
             return (void *) 8;
@@ -188,6 +174,19 @@ int generate_sorted_list() {
     pthread_t map_thread;
     pthread_t reduce_thread;
 
+    // Create 13 FIFO files IFF they do not exist.
+    for (short k = MIN_WORD_LENGTH; k <= MAX_WORD_LENGTH; ++k) {
+        auto fifo_path = "fifo_files/length_" + std::to_string(k) + ".txt";
+        int status = mkfifo(fifo_path.c_str(), 0777);
+
+        if (status == -1 && errno != EEXIST) {
+            fprintf(stderr, "Failed to create a FIFO file.\n");
+            return 5;
+        } else if (status == 0) {
+            printf("Successfully created fifo file: %s.\n", fifo_path.c_str());
+        }
+    }
+
     printf("Begin mapping process and create map thread with id %lu...\n", map_thread);
     if (pthread_create(&map_thread, nullptr, &map4, index_lists) != 0) {
         fprintf(stderr, "Failed to create map thread.\n");
@@ -208,19 +207,20 @@ int generate_sorted_list() {
     }
 
     delete clean_words;
+    unlink_fifos();
+
     return EXIT_SUCCESS;
 }
 
 int main(int argc, char **argv) {
     auto task4_run = time_func(generate_sorted_list);
+    // TODO implement graceful exit in task 1-4.
+    // TODO don't worry about data loss and all that, just exit(0).
 //    sleep(15);
 //    pthread()
     if (task4_run.second == 0) {
-        std::cout << std::endl << "Time taken in seconds: " << task4_run.first << "s." << std::endl;
+        printf("Time taken in seconds: %fs.\n", task4_run.first);
     }
-
-    // FIXME Causes error?
-//    unlink_fifos();
 
     return task4_run.second;
 }

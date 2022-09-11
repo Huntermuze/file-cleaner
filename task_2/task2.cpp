@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <cstdlib>
 #include <wait.h>
+#include "../task_1/word_filter.h"
 #include "../utilities/utils.h"
 #include "../utilities/function_timer.h"
 
@@ -28,7 +29,7 @@ std::vector<std::vector<std::string>> *get_length_lists() {
 
 int map2() {
     printf("Obtaining clean words list.\n");
-    clean_words = WordFilter::task_filter(&dirty_file_path);;
+    clean_words = WordFilter::task_filter(&dirty_file_path);
     auto *lists = get_length_lists();
     std::vector<std::string> words;
     int pid;
@@ -62,7 +63,7 @@ int map2() {
 
     printf("Destroying a child process.\n");
     if (pid == 0) {
-        exit(0);
+        exit(EXIT_SUCCESS);
     }
     while (wait(nullptr) != -1);
     delete lists;
@@ -112,14 +113,14 @@ int main(int argc, char **argv) {
     int status_reduce2 = reduce2_run.second;
 
 
-    if (status_map2 != 0) {
+    if (status_map2 != EXIT_SUCCESS) {
         fprintf(stderr, "An error occurred while attempting to create a fork.\n");
     }
-    if (status_reduce2 != 0) {
+    if (status_reduce2 != EXIT_SUCCESS) {
         fprintf(stderr,
                 "One or more of the files that were read in is empty! All files must have at least one line of content.\n");
     }
-    if (status_map2 == 0 && status_reduce2 == 0) {
+    if (status_map2 == EXIT_SUCCESS && status_reduce2 == EXIT_SUCCESS) {
         printf("Time taken in seconds: %fs.\n", time_map2 + time_reduce2);
     }
 }
