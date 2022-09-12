@@ -23,6 +23,7 @@ int sort_and_write(std::string *dirty_file_path, std::string *clean_file_path) {
         CleanFile << i << "\n";
     }
     CleanFile.close();
+    delete words_list;
 
     return EXIT_SUCCESS;
 }

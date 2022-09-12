@@ -1,5 +1,5 @@
 task5: task5.o word_filter.o utils.o
-	g++ task5.o word_filter.o utils.o -o task5
+	g++ task5.o word_filter.o utils.o -pthread -o task5
 
 utils.o: ../utilities/utils.cpp ../utilities/utils.h
 	g++ -c -Wall -Werror -g ../utilities/utils.cpp

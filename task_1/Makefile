@@ -1,6 +1,6 @@
 
 task1: task1.o function_timer.o word_filter.o utils.o
-	g++ task1.o function_timer.o word_filter.o utils.o -o task1
+	g++ task1.o function_timer.o word_filter.o utils.o -pthread -o task1
 
 utils.o: ../utilities/utils.cpp ../utilities/utils.h
 	g++ -c -Wall -Werror -g -O3 ../utilities/utils.cpp

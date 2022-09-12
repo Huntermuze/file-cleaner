@@ -1,6 +1,10 @@
 #include <unistd.h>
 #include <algorithm>
 #include <fstream>
+#include <iostream>
+#include <cstdlib>
+#include <sys/types.h>
+#include <pthread.h>
 #include "utils.h"
 #include "../task_1/word_filter.h"
 

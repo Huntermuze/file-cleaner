@@ -1,5 +1,5 @@
 task5server: task5server.o word_filter.o
-	g++ task5server.o word_filter.o -o task5server
+	g++ task5server.o word_filter.o -pthread -o task5server
 
 word_filter.o: ../task_1/word_filter.h ../task_1/word_filter.cpp
 	g++ -c -Wall -Werror -g ../task_1/word_filter.cpp
