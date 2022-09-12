@@ -95,7 +95,10 @@ int run_task5() {
     int fd = open(fifo_path->c_str(), O_WRONLY);
     while (scanf("%15s", current_word) != EOF) {
         to_write = current_word;
-        write(fd, &to_write, sizeof(to_write));
+        if (write(fd, &to_write, sizeof(to_write)) == -1) {
+            fprintf(stderr, "Writing to the fifo failed!\n");
+            return 11;
+        }
     }
     close(fd);
     // We will wait half a second, so that the display_count thread can print the most updated version of the word_length_counts

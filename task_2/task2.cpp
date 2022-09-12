@@ -9,10 +9,10 @@
 
 std::string dirty_file_path;
 std::string clean_file_path;
-std::vector<std::string> *clean_words;
 
 std::vector<std::vector<std::string>> *get_length_lists() {
-    auto *s = new std::vector<std::vector<std::string>>();
+    auto *clean_words = WordFilter::task_filter(&dirty_file_path);
+    auto *length_list = new std::vector<std::vector<std::string>>();
     for (long unsigned int i = MIN_WORD_LENGTH; i <= MAX_WORD_LENGTH; ++i) {
         std::vector<std::string> n_length_list;
         for (auto &word: *clean_words) {
@@ -20,17 +20,16 @@ std::vector<std::vector<std::string>> *get_length_lists() {
                 n_length_list.push_back(word);
             }
         }
-        s->push_back(n_length_list);
+        length_list->push_back(n_length_list);
     }
 
     delete clean_words;
 
-    return s;
+    return length_list;
 }
 
 int map2() {
     printf("Obtaining clean words list.\n");
-    clean_words = WordFilter::task_filter(&dirty_file_path);
     auto *lists = get_length_lists();
     std::vector<std::string> words;
     int pid = 0;
@@ -62,13 +61,14 @@ int map2() {
         OutFile << word << "\n";
     }
     OutFile.close();
+    lists->erase(lists->begin(), lists->end());
+    delete lists;
 
     printf("Destroying a child process.\n");
     if (pid == 0) {
         exit(EXIT_SUCCESS);
     }
     while (wait(nullptr) != -1);
-    delete lists;
 
     return EXIT_SUCCESS;
 }

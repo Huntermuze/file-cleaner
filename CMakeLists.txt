@@ -10,4 +10,4 @@ add_executable(Operating_System_Principles
         utilities/function_timer.cpp
         utilities/utils.cpp
         utilities/utils.h
-        task_5/task5.cpp)
+        task_2/task2.cpp)

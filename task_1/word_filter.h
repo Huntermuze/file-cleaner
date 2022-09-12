@@ -10,5 +10,4 @@ namespace WordFilter {
     std::vector<std::string> *task_filter(std::string *dirty_path);
 }
 
-
 #endif //OPERATING_SYSTEM_PRINCIPLES_WORD_FILTER_H

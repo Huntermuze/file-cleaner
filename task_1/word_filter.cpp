@@ -16,6 +16,7 @@ std::vector<std::string> *WordFilter::task_filter(std::string *dirty_path) {
         }
     }
 
+    regfree(&regx);
     DirtyFile.close();
 
     return words_list;

@@ -126,7 +126,8 @@ void *reduce3(void *) {
 //    for (int i = 0; i < length_n_fifos->size(); ++i) {
 //        delete &length_n_fifos[i];
 //    }
-//    delete length_n_fifos;
+    length_n_fifos->erase(length_n_fifos->begin(), length_n_fifos->end());
+    delete length_n_fifos;
     return EXIT_SUCCESS;
 }
 
