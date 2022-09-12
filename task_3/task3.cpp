@@ -47,7 +47,10 @@ void *write_to_fifo(void *args) {
     std::sort(arguments->index3.begin(), arguments->index3.end(), sort_rule);
 
     for (unsigned long i: arguments->index3) {
-        write(fd, &(*clean_words)[i], sizeof((*clean_words)[i]));
+        if (write(fd, &(*clean_words)[i], sizeof((*clean_words)[i])) == -1) {
+            fprintf(stderr, "Writing to a length n fifo failed!\n");
+            return (void *) 9;
+        }
     }
     close(fd);
     delete arguments;
@@ -178,7 +181,17 @@ int generate_sorted_list() {
     return EXIT_SUCCESS;
 }
 
-int main() {
+int main(int argc, char **argv) {
+    // Default to 15 seconds.
+    int graceful_exit_threshold = GRACEFUL_EXIT_DEFAULT_THRESHOLD;
+    if (argc == 2) {
+        graceful_exit_threshold = std::stoi(argv[1]);
+    }
+
+    if (graceful_exit(&graceful_exit_threshold) != 0) {
+        return EXIT_FAILURE;
+    }
+
     auto task3_run = time_func(generate_sorted_list);
     if (task3_run.second == 0) {
         printf("Time taken in seconds: %fs.\n", task3_run.first);

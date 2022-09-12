@@ -1,10 +1,12 @@
 #ifndef OPERATING_SYSTEM_PRINCIPLES_UTILS_H
 #define OPERATING_SYSTEM_PRINCIPLES_UTILS_H
-
+#define GRACEFUL_EXIT_DEFAULT_THRESHOLD 15
 #include <iostream>
 #include <vector>
 
 void unlink_fifos();
+
+int graceful_exit(int *time_in_seconds_to_terminate);
 
 namespace WordFilter {
     bool compare_string(const std::string_view &s1, const std::string_view &s2);

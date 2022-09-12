@@ -4,6 +4,28 @@
 #include "utils.h"
 #include "../task_1/word_filter.h"
 
+void *countdown(void *arg) {
+    auto *time_in_seconds_to_terminate = static_cast<int *>(arg);
+    if (time_in_seconds_to_terminate != nullptr) {
+        sleep(*time_in_seconds_to_terminate);
+    }
+    fprintf(stderr, "The program has gracefully terminated after exceeding its allowed (%ds) running duration!\n",
+            *time_in_seconds_to_terminate);
+    exit(EXIT_SUCCESS);
+}
+
+int graceful_exit(int *time_in_seconds_to_terminate) {
+    pthread_t countdown_thread;
+    if (pthread_create(&countdown_thread, nullptr, &countdown, time_in_seconds_to_terminate) != 0) {
+        fprintf(stderr, "Failed to create graceful exit thread.\n");
+        return EXIT_FAILURE;
+    }
+    // Do not wait until countdown finishes. This thread (the main one) can terminate before it does, and thus the
+    // process ends. This is how we will implement the graceful exiting system.
+
+    return EXIT_SUCCESS;
+}
+
 bool WordFilter::compare_string(const std::string_view &s1, const std::string_view &s2) {
     return s1.substr(MIN_WORD_LENGTH - 1) < s2.substr(MIN_WORD_LENGTH - 1);
 }

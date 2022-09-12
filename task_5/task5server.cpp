@@ -19,7 +19,5 @@ int run_server() {
 }
 
 int main() {
-    run_server();
-
-    return EXIT_SUCCESS;
+    return run_server();
 }

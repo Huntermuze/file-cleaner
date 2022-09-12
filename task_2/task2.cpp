@@ -32,7 +32,7 @@ int map2() {
     clean_words = WordFilter::task_filter(&dirty_file_path);
     auto *lists = get_length_lists();
     std::vector<std::string> words;
-    int pid;
+    int pid = 0;
 
     // We do max - min - 1 bcs the curr process counts as one. So we only need 12 child processes.
     printf("Creating child processes...\n");
@@ -53,7 +53,8 @@ int map2() {
         words = (*lists)[lists->size() - 1];
     }
 
-    printf("Sorting (and writing to file) words of length %lu. There are %zu words in this list.\n", words[0].length(), words.size());
+    printf("Sorting (and writing to file) words of length %lu. There are %zu words in this list.\n", words[0].length(),
+           words.size());
     std::sort(words.begin(), words.end(), WordFilter::compare_string);
     std::ofstream OutFile("separated_lists/length_" + std::to_string(words[0].length()) + ".txt");
     for (auto &word: words) {
@@ -102,6 +103,16 @@ int reduce2() {
 }
 
 int main(int argc, char **argv) {
+    // Default to 15 seconds.
+    int graceful_exit_threshold = GRACEFUL_EXIT_DEFAULT_THRESHOLD;
+    if (argc == 2) {
+        graceful_exit_threshold = std::stoi(argv[1]);
+    }
+
+    if (graceful_exit(&graceful_exit_threshold) != 0) {
+        return EXIT_FAILURE;
+    }
+
     printf("Begin mapping process...\n");
     auto map2_run = time_func(map2);
     double time_map2 = map2_run.first;
@@ -112,15 +123,16 @@ int main(int argc, char **argv) {
     double time_reduce2 = reduce2_run.first;
     int status_reduce2 = reduce2_run.second;
 
-
     if (status_map2 != EXIT_SUCCESS) {
         fprintf(stderr, "An error occurred while attempting to create a fork.\n");
+        return status_map2;
     }
     if (status_reduce2 != EXIT_SUCCESS) {
         fprintf(stderr,
                 "One or more of the files that were read in is empty! All files must have at least one line of content.\n");
+        return status_reduce2;
     }
-    if (status_map2 == EXIT_SUCCESS && status_reduce2 == EXIT_SUCCESS) {
-        printf("Time taken in seconds: %fs.\n", time_map2 + time_reduce2);
-    }
+    printf("Time taken in seconds: %fs.\n", time_map2 + time_reduce2);
+
+    return EXIT_SUCCESS;
 }

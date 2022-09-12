@@ -27,7 +27,10 @@ struct ReadFunctionArgs {
 
 void *read_from_fifo(void *args) {
     auto *arguments = (struct ReadFunctionArgs *) args;
-    nice(arguments->thread_priority);
+    if (nice(arguments->thread_priority) == -1 && (errno = 0) != 0) {
+        fprintf(stderr, "A nice value for this read thread could not be set!\n");
+        return (void *) 9;
+    }
     int fd = open(arguments->fifo_path.c_str(), O_RDONLY);
     auto *curr_word = new std::string();
     auto *length_n_fifo = new std::vector<std::string>();
@@ -44,7 +47,10 @@ void *read_from_fifo(void *args) {
 
 void *write_to_fifo(void *args) {
     auto *arguments = (struct WriteFunctionArgs *) args;
-    nice(arguments->thread_priority);
+    if (nice(arguments->thread_priority) == -1 && (errno = 0) != 0) {
+        fprintf(stderr, "A nice value for this write thread could not be set!\n");
+        return (void *) 9;
+    }
     int fd = open(arguments->fifo_path.c_str(), O_WRONLY);
     auto sort_rule = [](const int &i1, const int &i2) -> bool {
         return (*clean_words)[i1].substr(MIN_WORD_LENGTH - 1) < (*clean_words)[i2].substr(MIN_WORD_LENGTH - 1);
@@ -55,7 +61,10 @@ void *write_to_fifo(void *args) {
     std::sort(arguments->index4.begin(), arguments->index4.end(), sort_rule);
 
     for (unsigned long i: arguments->index4) {
-        write(fd, &(*clean_words)[i], sizeof((*clean_words)[i]));
+        if (write(fd, &(*clean_words)[i], sizeof((*clean_words)[i])) == -1) {
+            fprintf(stderr, "Writing to a length n fifo failed!\n");
+            return (void *) 10;
+        }
     }
     close(fd);
     delete arguments;
@@ -213,11 +222,17 @@ int generate_sorted_list() {
 }
 
 int main(int argc, char **argv) {
+    // Default to 15 seconds.
+    int graceful_exit_threshold = GRACEFUL_EXIT_DEFAULT_THRESHOLD;
+    if (argc == 2) {
+        graceful_exit_threshold = std::stoi(argv[1]);
+    }
+
+    if (graceful_exit(&graceful_exit_threshold) != 0) {
+        return EXIT_FAILURE;
+    }
+
     auto task4_run = time_func(generate_sorted_list);
-    // TODO implement graceful exit in task 1-4.
-    // TODO don't worry about data loss and all that, just exit(0).
-//    sleep(15);
-//    pthread()
     if (task4_run.second == 0) {
         printf("Time taken in seconds: %fs.\n", task4_run.first);
     }

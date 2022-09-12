@@ -7,9 +7,9 @@
 #include <fcntl.h>
 #include <pthread.h>
 #include "../task_1/word_filter.h"
+#include "../utilities/utils.h"
 
 #define cursup "\033[A"
-
 
 // THE ORIGINAL PLAN:
 // MAP opens the fifos for reading, and sends the word to the appropriate reduce thread, which the reduce thread
@@ -120,6 +120,16 @@ int run_task5() {
     return EXIT_SUCCESS;
 }
 
-int main() {
-    run_task5();
+int main(int argc, char **argv) {
+    // Default to 15 seconds.
+    int graceful_exit_threshold = GRACEFUL_EXIT_DEFAULT_THRESHOLD;
+    if (argc == 2) {
+        graceful_exit_threshold = std::stoi(argv[1]);
+    }
+
+    if (graceful_exit(&graceful_exit_threshold) != 0) {
+        return EXIT_FAILURE;
+    }
+
+    return run_task5();
 }
