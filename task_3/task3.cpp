@@ -10,7 +10,8 @@
 #include "../task_1/word_filter.h"
 #include "../utilities/utils.h"
 
-std::string dirty_file_path = "../data/dirty.txt";
+std::string dirty_file_path;
+std::string clean_file_path;
 std::vector<std::string> *clean_words;
 std::vector<std::vector<long unsigned int>> index_lists(13);
 
@@ -96,7 +97,6 @@ void *map3(void *) {
 
 void *reduce3(void *) {
     auto *length_n_fifos = new std::vector<std::vector<std::string>>();
-    std::string output_path = "../data/task3_sorted_list.txt";
     pthread_t workers[13];
 
     for (int i = MIN_WORD_LENGTH; i <= MAX_WORD_LENGTH; ++i) {
@@ -120,8 +120,8 @@ void *reduce3(void *) {
 
     }
     std::sort(length_n_fifos->begin(), length_n_fifos->end(), WordFilter::compare_vector_of_string);
-    printf("Perform merge algorithm, and then write final result to file %s\n", output_path.c_str());
-    WordFilter::merge_and_write(length_n_fifos, output_path);
+    printf("Perform merge algorithm, and then write final result to file %s\n", clean_file_path.c_str());
+    WordFilter::merge_and_write(length_n_fifos, clean_file_path);
 
 //    for (int i = 0; i < length_n_fifos->size(); ++i) {
 //        delete &length_n_fifos[i];
@@ -182,10 +182,22 @@ int generate_sorted_list() {
 }
 
 int main(int argc, char **argv) {
+    // Skipping proper validation & error-checking, as this is not important in this assignment.
     // Default to 15 seconds.
     int graceful_exit_threshold = GRACEFUL_EXIT_DEFAULT_THRESHOLD;
-    if (argc == 2) {
-        graceful_exit_threshold = std::stoi(argv[1]);
+    if (argc == 4) {
+        dirty_file_path = argv[1];
+        clean_file_path = argv[2];
+        graceful_exit_threshold = std::stoi(argv[3]);
+    } else if (argc == 3) {
+        dirty_file_path = argv[1];
+        clean_file_path = argv[2];
+    } else {
+        fprintf(stderr,
+                "You may only use the following syntax: \"./task3 [dirty_file_name] [clean_file_name] [graceful_exit_threshold_seconds]\"."
+                "\nNote that the graceful exit threshold is OPTIONAL, and will default to %d seconds if the argument is ignored.\n",
+                GRACEFUL_EXIT_DEFAULT_THRESHOLD);
+        return EXIT_FAILURE;
     }
 
     if (graceful_exit(&graceful_exit_threshold) != 0) {
