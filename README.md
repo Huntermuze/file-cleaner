@@ -1,6 +1,6 @@
 # OSP Assignment 1
 
-### A problem approached in various different ways, in order to attain the best performance.
+### File cleaning approached in various different ways, in order to attain the best performance.
 
 ## Running a Task
 
