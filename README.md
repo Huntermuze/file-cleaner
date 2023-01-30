@@ -1,4 +1,4 @@
-# OSP Assignment 1
+# Operating System Principles - File Cleaning
 
 ### File cleaning approached in various different ways, in order to attain the best performance.
 
